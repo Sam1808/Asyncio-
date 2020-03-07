@@ -11,10 +11,10 @@ RIGHT_KEY_CODE = 261
 UP_KEY_CODE = 259
 DOWN_KEY_CODE = 258
 
-async def blink(canvas, row, column, symbol):
+async def blink(canvas, offset_tics, row, column, symbol):
     while True:
 
-        for tic in range(0, random.randint(0,20)): # for async stars blink
+        for tic in range(0, offset_tics):
             await asyncio.sleep(0)
 
         canvas.addstr(row, column, symbol, curses.A_DIM)
@@ -67,27 +67,27 @@ async def animate_spaceship(canvas, # I do not understand why it`s blinking. I n
                             frames,
                             max_ship_row_position,
                             max_ship_column_position):
+
     while True:
+
+        rows_direction, columns_direction, space_pressed = read_controls(canvas)
+
+        row = row + rows_direction
+        if row == max_ship_row_position:
+            row = row - 1
+        elif row == 1:
+            row = row + 1
+
+        column = column + columns_direction
+        if column == max_ship_column_position:
+            column = column - 1
+        elif column == 1:
+            column = column + 1
+
         for frame in frames:
-
-            rows_direction, columns_direction, space_pressed = read_controls(canvas)
-
-            row = row + rows_direction
-            if row == max_ship_row_position:
-                row = row - 1
-            elif row == 1:
-                row = row + 1
-
-            column = column + columns_direction
-            if column == max_ship_column_position:
-                column = column - 1
-            elif column == 1:
-                column = column + 1
-
             draw_frame(canvas, row, column, frame)
             await asyncio.sleep(0)
             draw_frame(canvas, row, column, frame, negative=True)
-            await asyncio.sleep(0)
 
 
 def draw(canvas, ship_frames):
@@ -105,7 +105,8 @@ def draw(canvas, ship_frames):
     for star in range(0,100):
         row = random.randint(2, max_row-1) # let`s save place for border
         column = random.randint(2, max_column-1)
-        coroutine = blink(canvas, row, column, random.choice(stars_symbols))
+        offset_tics = random.randint(0, 20)
+        coroutine = blink(canvas, offset_tics, row, column, random.choice(stars_symbols))
         coroutines.append(coroutine)
 
     center_row = int(max_row/2)
