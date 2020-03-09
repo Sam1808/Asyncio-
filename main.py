@@ -4,12 +4,12 @@ import random
 import time
 from curses_tools import draw_frame, read_controls, get_frame_size
 
-
 SPACE_KEY_CODE = 32
 LEFT_KEY_CODE = 260
 RIGHT_KEY_CODE = 261
 UP_KEY_CODE = 259
 DOWN_KEY_CODE = 258
+
 
 async def blink(canvas, offset_tics, row, column, symbol):
     while True:
@@ -33,10 +33,10 @@ async def blink(canvas, offset_tics, row, column, symbol):
         for tic in range(0, 3):
             await asyncio.sleep(0)
 
+
 async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0):
 
     row, column = start_row, start_column
-
     canvas.addstr(round(row), round(column), '*')
     await asyncio.sleep(0)
 
@@ -61,13 +61,13 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0
         row += rows_speed
         column += columns_speed
 
-async def animate_spaceship(canvas, # I do not understand why it`s blinking. I need help :?
+
+async def animate_spaceship(canvas,
                             row,
                             column,
                             frames,
                             max_ship_row_position,
                             max_ship_column_position):
-
     while True:
 
         rows_direction, columns_direction, space_pressed = read_controls(canvas)
@@ -134,9 +134,8 @@ def draw(canvas, ship_frames):
             except StopIteration:
                 coroutines.remove(coroutine)
 
-        time.sleep(0.1)
         canvas.refresh()
-
+        time.sleep(0.1)
 
 
 if __name__=='__main__':
