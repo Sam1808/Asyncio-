@@ -122,3 +122,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 temp.py
+1.txt
