@@ -53,6 +53,10 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0
     curses.beep()
 
     while 0 < row < max_row and 0 < column < max_column:
+        for obstacle in OBSTACLES:
+            if obstacle.has_collision(row,column):
+                return False
+
         canvas.addstr(round(row), round(column), symbol)
         await asyncio.sleep(0)
         canvas.addstr(round(row), round(column), ' ')
@@ -170,8 +174,8 @@ def draw(canvas, ship_frames, trash_basket):
     coroutine= fill_orbit_with_garbage(canvas,trash_basket,max_column)
     EVENT_LOOP.append(coroutine)
 
-    coroutine = show_obstacles(canvas, OBSTACLES)
-    EVENT_LOOP.append(coroutine)
+    #coroutine = show_obstacles(canvas, OBSTACLES) to show obstacles
+    #EVENT_LOOP.append(coroutine)
 
     while True:
         for coroutine in EVENT_LOOP.copy():
