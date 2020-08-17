@@ -5,8 +5,10 @@ import random
 import time
 from curses_tools import draw_frame, read_controls, get_frame_size
 from physics import update_speed
+from obstacles import Obstacle, show_obstacles
 
 EVENT_LOOP = []
+OBSTACLES = []
 
 async def sleep(tics=1):
     for tic in range(0, tics):
@@ -89,7 +91,7 @@ async def animate_spaceship(canvas,
             column += column_speed
 
         if space_pressed:
-            coroutine = fire(canvas, row, column+2) #cannon barrel per center
+            coroutine = fire(canvas, row, column+2) # cannon barrel per center
             EVENT_LOOP.append(coroutine)
 
         for frame in frames:
@@ -106,18 +108,27 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     column = min(column, columns_number - 1)
 
     row = 1
-    frame_rows, _ = get_frame_size(garbage_frame)
+    frame_rows, frame_columns = get_frame_size(garbage_frame)
 
-    while row < rows_number-frame_rows-1:# let`s save bottom border
+    while row < rows_number-frame_rows-1:
+
+        barrier = Obstacle(row, column, frame_rows,frame_columns)
+        OBSTACLES.append(barrier)
+
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
+
+
         row += speed
+
+        OBSTACLES.remove(barrier)
 
 async def fill_orbit_with_garbage(canvas,trash_basket,max_column):
     while True:
         for garbage in trash_basket:
-            _, frame_columns = get_frame_size(garbage)# let`s save right border
+            _, frame_columns = get_frame_size(garbage)
+
             coroutine=fly_garbage(canvas, column=random.randint(2, max_column - frame_columns), garbage_frame=garbage)
             EVENT_LOOP.append(coroutine)
             await sleep(len(trash_basket))
@@ -142,8 +153,6 @@ def draw(canvas, ship_frames, trash_basket):
     center_row = int(max_row/2)
     center_column = int(max_column/2)
 
-    #coroutine = fire(canvas, center_row, center_column)
-    #EVENT_LOOP.append(coroutine)
 
     frame_rows, frame_columns = get_frame_size(ship_frames[0])
     max_ship_row_position = max_row - frame_rows
@@ -155,11 +164,14 @@ def draw(canvas, ship_frames, trash_basket):
                                   ship_frames,
                                   max_ship_row_position,
                                   max_ship_column_position)
+    
     EVENT_LOOP.append(coroutine)
 
     coroutine= fill_orbit_with_garbage(canvas,trash_basket,max_column)
     EVENT_LOOP.append(coroutine)
 
+    coroutine = show_obstacles(canvas, OBSTACLES)
+    EVENT_LOOP.append(coroutine)
 
     while True:
         for coroutine in EVENT_LOOP.copy():
