@@ -9,6 +9,8 @@ from obstacles import Obstacle, show_obstacles
 
 EVENT_LOOP = []
 OBSTACLES = []
+OBSTACLES_IN_LAST_COLLISIONS = []
+
 
 async def sleep(tics=1):
     for tic in range(0, tics):
@@ -53,8 +55,10 @@ async def fire(canvas, start_row, start_column, rows_speed=-0.3, columns_speed=0
     curses.beep()
 
     while 0 < row < max_row and 0 < column < max_column:
-        for obstacle in OBSTACLES:
+        for obstacle in OBSTACLES.copy():
             if obstacle.has_collision(row,column):
+                OBSTACLES_IN_LAST_COLLISIONS.append(obstacle)
+                
                 return False
 
         canvas.addstr(round(row), round(column), symbol)
@@ -100,7 +104,8 @@ async def animate_spaceship(canvas,
 
         for frame in frames:
             draw_frame(canvas, row, column, frame)
-            await sleep(2)
+            #await sleep(2) 
+            await asyncio.sleep(0) # TODO: speed of ship
             draw_frame(canvas, row, column, frame, negative=True)
 
 
@@ -116,6 +121,8 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
     while row < rows_number-frame_rows-1:
 
+
+
         barrier = Obstacle(row, column, frame_rows,frame_columns)
         OBSTACLES.append(barrier)
 
@@ -125,8 +132,13 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
 
         row += speed
-
+        
         OBSTACLES.remove(barrier)
+
+        if barrier in OBSTACLES_IN_LAST_COLLISIONS.copy():
+            OBSTACLES_IN_LAST_COLLISIONS.clear()
+            return False
+        
 
 async def fill_orbit_with_garbage(canvas,trash_basket,max_column):
     while True:
@@ -174,7 +186,7 @@ def draw(canvas, ship_frames, trash_basket):
     coroutine= fill_orbit_with_garbage(canvas,trash_basket,max_column)
     EVENT_LOOP.append(coroutine)
 
-    #coroutine = show_obstacles(canvas, OBSTACLES) to show obstacles
+    #coroutine = show_obstacles(canvas, OBSTACLES) # to show obstacles
     #EVENT_LOOP.append(coroutine)
 
     while True:
