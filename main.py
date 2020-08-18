@@ -6,6 +6,7 @@ import time
 from curses_tools import draw_frame, read_controls, get_frame_size
 from physics import update_speed
 from obstacles import Obstacle, show_obstacles
+from explosion import explode
 
 EVENT_LOOP = []
 OBSTACLES = []
@@ -137,6 +138,7 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
         if barrier in OBSTACLES_IN_LAST_COLLISIONS.copy():
             OBSTACLES_IN_LAST_COLLISIONS.clear()
+            await explode(canvas, row, column)
             return False
         
 
