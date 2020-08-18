@@ -12,6 +12,16 @@ EVENT_LOOP = []
 OBSTACLES = []
 OBSTACLES_IN_LAST_COLLISIONS = []
 
+GAME_OVER_LOGO='''
+   _____                         ____                 
+  / ____|                       / __ \                
+ | |  __  __ _ _ __ ___   ___  | |  | |_   _____ _ __ 
+ | | |_ |/ _` | '_ ` _ \ / _ \ | |  | \ \ / / _ \ '__|
+ | |__| | (_| | | | | | |  __/ | |__| |\ V /  __/ |   
+  \_____|\__,_|_| |_| |_|\___|  \____/  \_/ \___|_|   
+
+'''
+
 
 async def sleep(tics=1):
     for tic in range(0, tics):
@@ -108,7 +118,21 @@ async def animate_spaceship(canvas,
             #await sleep(2) 
             await asyncio.sleep(0) # TODO: speed of ship
             draw_frame(canvas, row, column, frame, negative=True)
-
+        
+        for obstacle in OBSTACLES.copy():
+            if obstacle.has_collision(row,column):
+                OBSTACLES_IN_LAST_COLLISIONS.append(obstacle)
+                EVENT_LOOP.append(show_gameover(canvas))
+                return False
+        
+async def show_gameover(canvas):
+    rows_number, columns_number = canvas.getmaxyx()
+    frame_rows, frame_columns = get_frame_size(GAME_OVER_LOGO)
+    row_position = rows_number/2 - frame_rows/2
+    columns_position = columns_number/2 - frame_columns/2
+    while True:
+        draw_frame(canvas,row_position,columns_position,GAME_OVER_LOGO)
+        await asyncio.sleep(0)
 
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     """Animate garbage, flying from top to bottom. Сolumn position will stay same, as specified on start."""
@@ -150,6 +174,9 @@ async def fill_orbit_with_garbage(canvas,trash_basket,max_column):
             coroutine=fly_garbage(canvas, column=random.randint(2, max_column - frame_columns), garbage_frame=garbage)
             EVENT_LOOP.append(coroutine)
             await sleep(len(trash_basket))
+
+
+
 
 def draw(canvas, ship_frames, trash_basket):
     canvas.border()
