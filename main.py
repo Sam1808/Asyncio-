@@ -8,20 +8,67 @@ from physics import update_speed
 from obstacles import Obstacle, show_obstacles
 from explosion import explode
 
+     
+
 EVENT_LOOP = []
 OBSTACLES = []
 OBSTACLES_IN_LAST_COLLISIONS = []
+YEAR = 1957
+GARBAGE_AMOUNT = None
+CANNOT_BARREL = None
+PHRASES = {
 
-GAME_OVER_LOGO='''
-   _____                         ____                 
-  / ____|                       / __ \                
- | |  __  __ _ _ __ ___   ___  | |  | |_   _____ _ __ 
- | | |_ |/ _` | '_ ` _ \ / _ \ | |  | \ \ / / _ \ '__|
- | |__| | (_| | | | | | |  __/ | |__| |\ V /  __/ |   
-  \_____|\__,_|_| |_| |_|\___|  \____/  \_/ \___|_|   
+    1957: "First Sputnik",
+    1961: "Gagarin flew!",
+    1969: "Armstrong got on the moon!",
+    1971: "First orbital space station Salute-1",
+    1981: "Flight of the Shuttle Columbia",
+    1998: 'ISS start building',
+    2011: 'Messenger launch to Mercury',
+    2020: "Take the plasma gun! Shoot the garbage!",
+}
 
-'''
+async def show_year(canvas, max_row, max_column):
+    global YEAR
+    global GARBAGE_AMOUNT
+    global CANNOT_BARREL
 
+    subwindow = canvas.derwin(max_row-3, int(max_column/1.5))
+    
+
+    while True:
+        
+        GARBAGE_AMOUNT = get_garbage_delay_tics(YEAR)
+
+        if YEAR >= 2020:
+            CANNOT_BARREL = True
+
+        message = f'Current year: {YEAR}'
+        subwindow.addstr(0,0, message)
+
+        if YEAR in PHRASES.keys():
+            space_event = f'{YEAR}: {PHRASES.get(YEAR)}'
+            subwindow.addstr(1,0, space_event)
+
+        subwindow.refresh()
+        YEAR += 1 
+        await sleep(15)
+
+def get_garbage_delay_tics(year):
+    if year < 1961:
+        return None
+    elif year < 1969:
+        return 20
+    elif year < 1981:
+        return 14
+    elif year < 1995:
+        return 10
+    elif year < 2010:
+        return 8
+    elif year < 2020:
+        return 6
+    else:
+        return 2
 
 async def sleep(tics=1):
     for tic in range(0, tics):
@@ -84,7 +131,8 @@ async def animate_spaceship(canvas,
                             column,
                             frames,
                             max_ship_row_position,
-                            max_ship_column_position):
+                            max_ship_column_position,
+                            game_over_logo):
     row_speed = column_speed = 0
     while True:
 
@@ -109,7 +157,7 @@ async def animate_spaceship(canvas,
         else:
             column += column_speed
 
-        if space_pressed:
+        if space_pressed and CANNOT_BARREL:
             coroutine = fire(canvas, row, column+2) # cannon barrel per center
             EVENT_LOOP.append(coroutine)
 
@@ -122,16 +170,16 @@ async def animate_spaceship(canvas,
         for obstacle in OBSTACLES.copy():
             if obstacle.has_collision(row,column):
                 OBSTACLES_IN_LAST_COLLISIONS.append(obstacle)
-                EVENT_LOOP.append(show_gameover(canvas))
+                EVENT_LOOP.append(show_gameover(canvas,game_over_logo))
                 return False
         
-async def show_gameover(canvas):
+async def show_gameover(canvas, game_over_logo):
     rows_number, columns_number = canvas.getmaxyx()
-    frame_rows, frame_columns = get_frame_size(GAME_OVER_LOGO)
+    frame_rows, frame_columns = get_frame_size(game_over_logo)
     row_position = rows_number/2 - frame_rows/2
     columns_position = columns_number/2 - frame_columns/2
     while True:
-        draw_frame(canvas,row_position,columns_position,GAME_OVER_LOGO)
+        draw_frame(canvas,row_position,columns_position,game_over_logo)
         await asyncio.sleep(0)
 
 async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
@@ -144,7 +192,7 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     row = 1
     frame_rows, frame_columns = get_frame_size(garbage_frame)
 
-    while row < rows_number-frame_rows-1:
+    while row < rows_number-frame_rows-3: # -3 to save the year info
 
 
 
@@ -168,17 +216,23 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
 async def fill_orbit_with_garbage(canvas,trash_basket,max_column):
     while True:
-        for garbage in trash_basket:
-            _, frame_columns = get_frame_size(garbage)
+        
+        if GARBAGE_AMOUNT:
+            
+            for garbage in trash_basket:
+                _, frame_columns = get_frame_size(garbage)
 
-            coroutine=fly_garbage(canvas, column=random.randint(2, max_column - frame_columns), garbage_frame=garbage)
-            EVENT_LOOP.append(coroutine)
-            await sleep(len(trash_basket))
+                coroutine=fly_garbage(canvas, column=random.randint(2, max_column - frame_columns), garbage_frame=garbage)
+                EVENT_LOOP.append(coroutine)
+            
+                await sleep(GARBAGE_AMOUNT)
+        await sleep(1)
 
 
 
 
-def draw(canvas, ship_frames, trash_basket):
+
+def draw(canvas, ship_frames, trash_basket, game_over_logo):
     canvas.border()
     canvas.nodelay(True)
     curses.curs_set(False)
@@ -189,7 +243,7 @@ def draw(canvas, ship_frames, trash_basket):
     stars_symbols = '+:.*'
 
     for star in range(0,100):
-        row = random.randint(2, max_row-1) # let`s save place for border
+        row = random.randint(2, max_row-3) # let`s save place for border and year
         column = random.randint(2, max_column-1)
         offset_tics = random.randint(0, 20)
         coroutine = blink(canvas, offset_tics, row, column, random.choice(stars_symbols))
@@ -208,25 +262,34 @@ def draw(canvas, ship_frames, trash_basket):
                                   center_column,
                                   ship_frames,
                                   max_ship_row_position,
-                                  max_ship_column_position)
+                                  max_ship_column_position,
+                                  game_over_logo)
     
+    EVENT_LOOP.append(coroutine)
+
+    coroutine = show_year(canvas, max_row, max_column)
     EVENT_LOOP.append(coroutine)
 
     coroutine= fill_orbit_with_garbage(canvas,trash_basket,max_column)
     EVENT_LOOP.append(coroutine)
 
-    #coroutine = show_obstacles(canvas, OBSTACLES) # to show obstacles
-    #EVENT_LOOP.append(coroutine)
 
     while True:
+        
         for coroutine in EVENT_LOOP.copy():
             try:
                 coroutine.send(None)
             except StopIteration:
                 EVENT_LOOP.remove(coroutine)
-
+        
+        
         canvas.refresh()
         time.sleep(0.1)
+
+
+
+
+
 
 if __name__=='__main__':
 
@@ -246,6 +309,8 @@ if __name__=='__main__':
             garbage = file.read()
         trash_basket.append(garbage)
 
+    with open("animation/game_over.txt", 'r') as file:
+        game_over_logo = file.read()
 
     curses.update_lines_cols()
-    curses.wrapper(draw, ship_frames, trash_basket)
+    curses.wrapper(draw, ship_frames, trash_basket, game_over_logo)
