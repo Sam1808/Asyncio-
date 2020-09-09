@@ -12,41 +12,42 @@ EVENT_LOOP = []
 OBSTACLES = []
 OBSTACLES_IN_LAST_COLLISIONS = []
 YEAR = 1957
-GARBAGE_AMOUNT = None
 CANNON_BARREL = None
-PHRASES = {
-    1957: "First Sputnik",
-    1961: "Gagarin flew!",
-    1969: "Armstrong got on the moon!",
-    1971: "First orbital space station Salute-1",
-    1981: "Flight of the Shuttle Columbia",
-    1998: 'ISS start building',
-    2011: 'Messenger launch to Mercury',
-    2020: "Take the plasma gun! Shoot the garbage!",
-}
 
 async def show_year(canvas, max_row, max_column): # To show year & events, triggers for garbage amount & cannon barrel
     global YEAR
-    global GARBAGE_AMOUNT
+    #global GARBAGE_AMOUNT
     global CANNON_BARREL
+
+    phrases = {
+        1957: "First Sputnik",
+        1961: "Gagarin flew!",
+        1969: "Armstrong got on the moon!",
+        1971: "First orbital space station Salute-1",
+        1981: "Flight of the Shuttle Columbia",
+        1998: 'ISS start building',
+        2011: 'Messenger launch to Mercury',
+        2020: "Take the plasma gun! Shoot the garbage!",
+    }
+
 
     subwindow = canvas.derwin(max_row-3, int(max_column/1.5))
     
     while True:
-        GARBAGE_AMOUNT = get_garbage_delay_tics(YEAR)
+        
         if YEAR >= 2020:
             CANNON_BARREL = True
 
         message = f'Current year: {YEAR}'
         subwindow.addstr(0,0, message)
 
-        if YEAR in PHRASES.keys():
-            space_event = f'{YEAR}: {PHRASES.get(YEAR)}'
+        if YEAR in phrases.keys():
+            space_event = f'{YEAR}: {phrases.get(YEAR)}'
             subwindow.addstr(1,0, space_event)
 
         subwindow.refresh()
-        YEAR += 1 
         await sleep(15)
+        YEAR += 1
 
 async def sleep(tics=1):
     for tic in range(0, tics):
@@ -169,35 +170,41 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
     row = 1
     frame_rows, frame_columns = get_frame_size(garbage_frame)
 
+    barrier = Obstacle(row, column, frame_rows, frame_columns)
+    OBSTACLES.append(barrier)
+
     while row < rows_number-frame_rows-3: # -3 to save the year info
 
-        barrier = Obstacle(row, column, frame_rows,frame_columns)
-        OBSTACLES.append(barrier)
+        barrier.row = row
 
         draw_frame(canvas, row, column, garbage_frame)
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, garbage_frame, negative=True)
 
         row += speed
-        
-        OBSTACLES.remove(barrier)
 
         if barrier in OBSTACLES_IN_LAST_COLLISIONS.copy():
             OBSTACLES_IN_LAST_COLLISIONS.clear()
             await explode(canvas, row, column)
             return False
+    
+    OBSTACLES.remove(barrier)
+
 
 async def fill_orbit_with_garbage(canvas,trash_basket,max_column):
+    
     while True:
+        garbage_amount = get_garbage_delay_tics(YEAR)
         
-        if GARBAGE_AMOUNT:
+        if garbage_amount:
             for garbage in trash_basket:
                 _, frame_columns = get_frame_size(garbage)
 
                 coroutine=fly_garbage(canvas, column=random.randint(2, max_column - frame_columns), garbage_frame=garbage)
                 EVENT_LOOP.append(coroutine)
             
-                await sleep(GARBAGE_AMOUNT)
+                await sleep(garbage_amount)
+        
         await asyncio.sleep(0)
 
 
@@ -251,10 +258,10 @@ def draw(canvas, ship_frames, trash_basket, game_over_logo):
                                   game_over_logo)
     EVENT_LOOP.append(coroutine)
 
-    coroutine = show_year(canvas, max_row, max_column)
+    coroutine= fill_orbit_with_garbage(canvas,trash_basket,max_column)
     EVENT_LOOP.append(coroutine)
 
-    coroutine= fill_orbit_with_garbage(canvas,trash_basket,max_column)
+    coroutine = show_year(canvas, max_row, max_column)
     EVENT_LOOP.append(coroutine)
 
     while True:
