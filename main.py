@@ -8,16 +8,13 @@ from physics import update_speed
 from obstacles import Obstacle, show_obstacles
 from explosion import explode
 
-EVENT_LOOP = []
+GAME_COROUTINES = []
 OBSTACLES = []
 OBSTACLES_IN_LAST_COLLISIONS = []
 YEAR = 1957
-CANNON_BARREL = None
 
-async def show_year(canvas, max_row, max_column): # To show year & events, triggers for garbage amount & cannon barrel
+async def show_year(canvas, max_row, max_column): # To show year & events, triggers for garbage amount
     global YEAR
-    #global GARBAGE_AMOUNT
-    global CANNON_BARREL
 
     phrases = {
         1957: "First Sputnik",
@@ -30,14 +27,10 @@ async def show_year(canvas, max_row, max_column): # To show year & events, trigg
         2020: "Take the plasma gun! Shoot the garbage!",
     }
 
-
     subwindow = canvas.derwin(max_row-3, int(max_column/1.5))
     
     while True:
         
-        if YEAR >= 2020:
-            CANNON_BARREL = True
-
         message = f'Current year: {YEAR}'
         subwindow.addstr(0,0, message)
 
@@ -111,6 +104,7 @@ async def animate_spaceship(canvas,
                             max_ship_column_position,
                             game_over_logo):
     row_speed = column_speed = 0
+    
     while True:
 
         rows_direction, columns_direction, space_pressed = read_controls(canvas)
@@ -134,9 +128,10 @@ async def animate_spaceship(canvas,
         else:
             column += column_speed
 
-        if space_pressed and CANNON_BARREL:
-            coroutine = fire(canvas, row, column+2) # cannon barrel per center
-            EVENT_LOOP.append(coroutine)
+
+        if space_pressed and YEAR >= 2020: # enable cannon after 2020 year
+            coroutine = fire(canvas, row, column+2)  # cannon per center
+            GAME_COROUTINES.append(coroutine)
 
         for frame in frames:
             draw_frame(canvas, row, column, frame)
@@ -146,7 +141,7 @@ async def animate_spaceship(canvas,
         for obstacle in OBSTACLES.copy():
             if obstacle.has_collision(row,column):
                 OBSTACLES_IN_LAST_COLLISIONS.append(obstacle)
-                EVENT_LOOP.append(show_gameover(canvas,game_over_logo))
+                GAME_COROUTINES.append(show_gameover(canvas,game_over_logo))
                 return False
         
 async def show_gameover(canvas, game_over_logo):
@@ -201,7 +196,7 @@ async def fill_orbit_with_garbage(canvas,trash_basket,max_column):
                 _, frame_columns = get_frame_size(garbage)
 
                 coroutine=fly_garbage(canvas, column=random.randint(2, max_column - frame_columns), garbage_frame=garbage)
-                EVENT_LOOP.append(coroutine)
+                GAME_COROUTINES.append(coroutine)
             
                 await sleep(garbage_amount)
         
@@ -240,7 +235,7 @@ def draw(canvas, ship_frames, trash_basket, game_over_logo):
         column = random.randint(2, max_column-1)
         offset_tics = random.randint(0, 20)
         coroutine = blink(canvas, offset_tics, row, column, random.choice(stars_symbols))
-        EVENT_LOOP.append(coroutine)
+        GAME_COROUTINES.append(coroutine)
 
     center_row = int(max_row/2)
     center_column = int(max_column/2)
@@ -256,21 +251,21 @@ def draw(canvas, ship_frames, trash_basket, game_over_logo):
                                   max_ship_row_position,
                                   max_ship_column_position,
                                   game_over_logo)
-    EVENT_LOOP.append(coroutine)
+    GAME_COROUTINES.append(coroutine)
 
     coroutine= fill_orbit_with_garbage(canvas,trash_basket,max_column)
-    EVENT_LOOP.append(coroutine)
+    GAME_COROUTINES.append(coroutine)
 
     coroutine = show_year(canvas, max_row, max_column)
-    EVENT_LOOP.append(coroutine)
+    GAME_COROUTINES.append(coroutine)
 
     while True:
         
-        for coroutine in EVENT_LOOP.copy():
+        for coroutine in GAME_COROUTINES.copy():
             try:
                 coroutine.send(None)
             except StopIteration:
-                EVENT_LOOP.remove(coroutine) 
+                GAME_COROUTINES.remove(coroutine) 
         
         canvas.refresh()
         time.sleep(0.1)
