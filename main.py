@@ -4,6 +4,7 @@ import glob
 import random
 import time
 from curses_tools import draw_frame, read_controls, get_frame_size
+from itertools import cycle
 from physics import update_speed
 from obstacles import Obstacle, show_obstacles
 from explosion import explode
@@ -105,7 +106,7 @@ async def animate_spaceship(canvas,
                             game_over_logo):
     row_speed = column_speed = 0
     
-    while True:
+    for frame in cycle(frames):
 
         rows_direction, columns_direction, space_pressed = read_controls(canvas)
 
@@ -133,11 +134,10 @@ async def animate_spaceship(canvas,
             coroutine = fire(canvas, row, column+2)  # cannon per center
             game_coroutines.append(coroutine)
 
-        for frame in frames:
-            draw_frame(canvas, row, column, frame)
-            await asyncio.sleep(0) # more smoother then await sleep(2) 
-            draw_frame(canvas, row, column, frame, negative=True)
-        
+        draw_frame(canvas, row, column, frame)
+        await asyncio.sleep(0)
+        draw_frame(canvas, row, column, frame, negative=True)
+
         frame_rows, frame_columns = get_frame_size(frames[0])
         
         for obstacle in obstacles.copy():
@@ -278,9 +278,11 @@ if __name__=='__main__':
     with open("animation/rocket_frame_1.txt", 'r') as file:
         frame_1 = file.read()
     ship_frames.append(frame_1)
+    ship_frames.append(frame_1)
     with open("animation/rocket_frame_2.txt", 'r') as file:
         frame_2 = file.read()
     ship_frames.append(frame_2)
+    ship_frames.append(frame_2) 
 
     existed_files = set(glob.glob('animation/garbage/*', recursive=False))
     trash_basket = []
