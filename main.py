@@ -138,8 +138,10 @@ async def animate_spaceship(canvas,
             await asyncio.sleep(0) # more smoother then await sleep(2) 
             draw_frame(canvas, row, column, frame, negative=True)
         
+        frame_rows, frame_columns = get_frame_size(frames[0])
+        
         for obstacle in obstacles.copy():
-            if obstacle.has_collision(row,column):
+            if obstacle.has_collision(row,column,frame_rows,frame_columns):
                 obstacles_in_last_collisions.append(obstacle)
                 game_coroutines.append(show_gameover(canvas,game_over_logo))
                 return False
