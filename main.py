@@ -101,11 +101,13 @@ async def animate_spaceship(canvas,
                             row,
                             column,
                             frames,
-                            max_ship_row_position,
-                            max_ship_column_position,
+                            max_row,
+                            max_column,
                             game_over_logo):
     row_speed = column_speed = 0
     
+    frame_rows, frame_columns = get_frame_size(frames[0])
+
     for frame in cycle(frames):
 
         rows_direction, columns_direction, space_pressed = read_controls(canvas)
@@ -115,19 +117,21 @@ async def animate_spaceship(canvas,
 
         row_speed, column_speed = update_speed(row_speed, column_speed, rows_direction, columns_direction)
 
-        if row > max_ship_row_position-1: # save the header|footer border
-            row = row - 1
-        elif row < 2:
-            row = row + 1
-        else:
-            row += row_speed
+        row += row_speed
 
-        if column > max_ship_column_position-1: # save the right|left border
-            column = column - 1
+        if row > max_row-frame_rows:  # save the header|footer border
+            row = max_row-frame_rows-1   
+        elif row < 1:
+            row = 1
+
+        column += column_speed
+
+        if column > max_column-frame_columns: # save the right|left border
+            column = max_column-frame_columns-1
         elif column < 1:
-            column = column + 1
-        else:
-            column += column_speed
+            column = 1
+
+            
 
 
         if space_pressed and year >= 2020: # enable cannon after 2020 year
@@ -138,8 +142,6 @@ async def animate_spaceship(canvas,
         await asyncio.sleep(0)
         draw_frame(canvas, row, column, frame, negative=True)
 
-        frame_rows, frame_columns = get_frame_size(frames[0])
-        
         for obstacle in obstacles.copy():
             if obstacle.has_collision(row,column,frame_rows,frame_columns):
                 obstacles_in_last_collisions.append(obstacle)
@@ -242,16 +244,16 @@ def draw(canvas, ship_frames, trash_basket, game_over_logo):
     center_row = int(max_row/2)
     center_column = int(max_column/2)
 
-    frame_rows, frame_columns = get_frame_size(ship_frames[0])
-    max_ship_row_position = max_row - frame_rows
-    max_ship_column_position = max_column - frame_columns
+    #frame_rows, frame_columns = get_frame_size(ship_frames[0])
+    #max_ship_row_position = max_row - frame_rows
+    #max_ship_column_position = max_column - frame_columns
 
     coroutine = animate_spaceship(canvas,
                                   center_row,
                                   center_column,
                                   ship_frames,
-                                  max_ship_row_position,
-                                  max_ship_column_position,
+                                  max_row,
+                                  max_column,
                                   game_over_logo)
     game_coroutines.append(coroutine)
 
