@@ -131,9 +131,6 @@ async def animate_spaceship(canvas,
         elif column < 1:
             column = 1
 
-            
-
-
         if space_pressed and year >= 2020: # enable cannon after 2020 year
             coroutine = fire(canvas, row, column+2)  # cannon per center
             game_coroutines.append(coroutine)
@@ -182,11 +179,12 @@ async def fly_garbage(canvas, column, garbage_frame, speed=0.5):
 
         row += speed
 
-        if barrier in obstacles_in_last_collisions.copy():
-            obstacles_in_last_collisions.clear()
+        if barrier in obstacles_in_last_collisions:
             await explode(canvas, row, column)
+            obstacles_in_last_collisions.remove(barrier)
+            obstacles.remove(barrier)
             return False
-    
+
     obstacles.remove(barrier)
 
 
