@@ -193,14 +193,16 @@ async def fill_orbit_with_garbage(canvas,trash_basket,max_column):
     while True:
         garbage_amount = get_garbage_delay_tics(year)
         
-        if garbage_amount:
-            for garbage in trash_basket:
-                _, frame_columns = get_frame_size(garbage)
+        if not garbage_amount:
+            await asyncio.sleep(0)
+            continue
+        for garbage in trash_basket:
+            _, frame_columns = get_frame_size(garbage)
 
-                coroutine=fly_garbage(canvas, column=random.randint(2, max_column - frame_columns), garbage_frame=garbage)
-                game_coroutines.append(coroutine)
+            coroutine=fly_garbage(canvas, column=random.randint(2, max_column - frame_columns), garbage_frame=garbage)
+            game_coroutines.append(coroutine)
             
-                await sleep(garbage_amount)
+            await sleep(garbage_amount)
         
         await asyncio.sleep(0)
 
