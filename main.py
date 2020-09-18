@@ -244,10 +244,6 @@ def draw(canvas, ship_frames, trash_basket, game_over_logo):
     center_row = int(max_row/2)
     center_column = int(max_column/2)
 
-    #frame_rows, frame_columns = get_frame_size(ship_frames[0])
-    #max_ship_row_position = max_row - frame_rows
-    #max_ship_column_position = max_column - frame_columns
-
     coroutine = animate_spaceship(canvas,
                                   center_row,
                                   center_column,
@@ -276,15 +272,17 @@ def draw(canvas, ship_frames, trash_basket, game_over_logo):
 
 if __name__=='__main__':
 
-    ship_frames = []
     with open("animation/rocket_frame_1.txt", 'r') as file:
         frame_1 = file.read()
-    ship_frames.append(frame_1)
-    ship_frames.append(frame_1)
     with open("animation/rocket_frame_2.txt", 'r') as file:
         frame_2 = file.read()
-    ship_frames.append(frame_2)
-    ship_frames.append(frame_2) 
+    
+    ship_frames = [
+        frame_1,
+        frame_1,
+        frame_2,
+        frame_2,
+    ]
 
     existed_files = set(glob.glob('animation/garbage/*', recursive=False))
     trash_basket = []
