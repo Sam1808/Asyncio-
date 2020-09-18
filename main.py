@@ -119,18 +119,14 @@ async def animate_spaceship(canvas,
 
         row += row_speed
 
-        if row > max_row-frame_rows:  # save the header|footer border
-            row = max_row-frame_rows-1   
-        elif row < 1:
-            row = 1
-
+        row = min(row, max_row-frame_rows-1)  # honestly, I spied it
+        row = max(row,1)
+        
         column += column_speed
 
-        if column > max_column-frame_columns: # save the right|left border
-            column = max_column-frame_columns-1
-        elif column < 1:
-            column = 1
-
+        column = min(column, max_column-frame_columns-1)
+        column = max(column,1)
+       
         if space_pressed and year >= 2020: # enable cannon after 2020 year
             coroutine = fire(canvas, row, column+2)  # cannon per center
             game_coroutines.append(coroutine)
